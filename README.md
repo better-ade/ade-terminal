@@ -12,7 +12,7 @@
   <a href="https://github.com/better-ade/ade-terminal/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/better-ade/ade-terminal/total?color=4CC38A"></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-5A616D">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4CC38A"></a>
-  <a href="https://github.com/better-ade/ade-method/releases/latest"><img alt="ade-setup" src="https://img.shields.io/github/v/release/better-ade/ade-method?label=ade-setup&color=BC8CFF"></a>
+  <a href="https://github.com/better-ade/ade-method/releases/latest"><img alt="ade-method" src="https://img.shields.io/github/v/release/better-ade/ade-method?label=ade-method&color=BC8CFF"></a>
 </p>
 
 <p align="center">
@@ -35,7 +35,7 @@ ADE is a desktop IDE for macOS and Linux built around **Claude Code**, with Code
 - **One role, any CLI**: a profile composes one role definition in `~/.ade/roles/`, shared by every project; Claude Code and Ollama (deepseek and other local models) each receive it the way they accept one. Codex is shown unavailable rather than guessing a flag that fails silently.
 - **A whole company, not just a delivery team**: nineteen roles end to end, from analyst and product manager through developer and QA to security engineer, SRE, release manager, support and solutions engineering. The picker lists every one unpaired, so the roles no profile covers are still a keystroke away.
 - **Project setup**: every project is set up for agents once, automatically. See [below](#project-setup).
-- **The agents are a repo you can share**: every role definition lives in [ade-setup](https://github.com/better-ade/ade-method), versioned and released, and ADE ships a pinned copy. Improve a role there and it reaches your projects when you choose to update them, not on ADE's release schedule.
+- **The agents are a repo you can share**: every role definition lives in [ade-method](https://github.com/better-ade/ade-method) (formerly ade-setup), versioned and released, and ADE ships a pinned copy: today the nineteen-role v1 set (ade-setup v1.0.4, in `vendor/ade-setup/`). Improve a role there and it reaches your projects when you choose to update them, not on ADE's release schedule.
 <p align="center">
   <img src="https://ade.ardata.tech/assets/img/fleet.webp" alt="The fleet timeline: one lane per agent and sub-agent, with what is running, what finished, and the cost so far" width="100%">
 </p>
@@ -90,11 +90,20 @@ Pass `--dry-run` to see what it would do, or `--help` for the options.
 
 ADE works with [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Codex and Ollama. See the [user guide](https://ade.ardata.tech/guide/) to get started.
 
+## Where it fits
+
+ADE is the desktop app. Around it: [ade](https://github.com/better-ade/ade-cli), the command for any terminal;
+[ade-brain](https://github.com/better-ade/ade-brain), the hub; [ade-method](https://github.com/better-ade/ade-method),
+the rules; [ade-skills](https://github.com/better-ade/ade-skills), the skills;
+[ade-secrets](https://github.com/better-ade/ade-secrets), the keys; and
+[ade-computer](https://github.com/better-ade/ade-computer), an isolated desktop to run it all in. The website is
+[ade.ardata.tech](https://ade.ardata.tech/).
+
 ## Licence
 
 ADE is free and open source under the [MIT licence](LICENSE). Every feature, no account, no keys, no telemetry. Use it at work, fork it, ship your own build, no permission needed.
 
-Issues and pull requests are welcome, on the app and on [ade-setup](https://github.com/better-ade/ade-method), where the agent definitions live. [CONTRIBUTING.md](CONTRIBUTING.md) has the build steps, what CI checks, and a path in that needs no Rust: the nineteen roles are markdown.
+Issues and pull requests are welcome, on the app and on [ade-method](https://github.com/better-ade/ade-method), where the agent definitions live. [CONTRIBUTING.md](CONTRIBUTING.md) has the build steps, what CI checks, and a path in that needs no Rust: the nineteen roles are markdown.
 
 ## Used on real work
 
