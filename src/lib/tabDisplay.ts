@@ -15,8 +15,8 @@ export const DEFAULT_NAME = /^Terminal( \d+)?$/;
 
 /**
  * The pane whose folder is the tab's folder (App's activeCwd, and so project
- * setup, the board, Fleet's "This terminal" and the context guard; the
- * palette's BMAD switch and "Set up project"): the own view's active pane,
+ * setup, Fleet's "This terminal" and the context guard; the palette's
+ * "Set up project"): the own view's active pane,
  * whatever view is in sight.
  */
 export function tabFolderPaneId(tab: Tab): string {

@@ -72,13 +72,6 @@ async function boot() {
     await syncBeforeLaunch();
     await hydrateFromDisk();
     startAutoSave();
-    // After the restore, so "no kept list yet" is true only on the first
-    // launch with one; after auto-save starts, so the list reaches disk.
-    const { migrateKept, reaskV4Projects } = await import("./lib/projectSetup");
-    migrateKept();
-    // Not awaited: it asks the disk about each kept project, and launch
-    // doesn't wait on that.
-    void reaskV4Projects();
     startPeriodicSync();
   }
   // Paint the persisted theme onto :root before React's first render, so the

@@ -4,8 +4,7 @@
   "description": "A better terminal for agentic AI development",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && npm run build:runtime && cp dist-runtime/ade-runtime.mjs src-tauri/resources/ade-runtime.mjs",
-    "build:runtime": "vite build --config vite.runtime.config.ts",
+    "build": "tsc && vite build",
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",

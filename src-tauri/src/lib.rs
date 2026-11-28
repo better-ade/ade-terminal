@@ -1,26 +1,16 @@
 mod ade_cli;
 mod agent_status;
 mod antislop;
-mod bmad;
-mod bmadconfig;
 mod claude_settings;
 mod cli_guard;
 mod cli_rules;
-// Public so `tests/bmadswitch_e2e.rs` can plan and apply a switch the way the
-// commands do, without the `AppHandle` they take.
-pub mod bmadswitch;
-// Public so `tests/bmadv6_e2e.rs` — an integration test, outside the crate —
-// can scaffold a project with the same `install` setup uses.
-pub mod bmadv6;
 mod contracts;
 mod crashlog;
 mod git;
 mod mcp;
 mod orgo_rules;
 mod platform;
-// Public so `tests/bmadswitch_e2e.rs` can set a project up with the same
-// `apply` the setup command and the switch use.
-pub mod projectsetup;
+mod projectsetup;
 mod hook_forward;
 mod pty;
 mod ptysink;
@@ -562,10 +552,6 @@ pub fn run() {
             usage::latest_context,
             list_md_files,
             list_directory,
-            bmad::bmad_status,
-            bmadswitch::bmad_switch_pending,
-            bmadswitch::bmad_switch_plan,
-            bmadswitch::bmad_switch_apply,
             subagent::watch_subagents,
             subagent::unwatch_subagents,
             state::state_read_all,
@@ -602,6 +588,27 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
+    /// Story ST1, slice 1 (st_no_bmad_rust): the app registers no BMAD
+    /// command. ade brings the method; the terminal ships none of it.
+    #[test]
+    fn no_bmad_command_is_registered() {
+        let src = include_str!("lib.rs");
+        let start = src.find("generate_handler![").expect("the handler list");
+        let list = &src[start..start + src[start..].find("])").expect("its end")];
+        let commands: Vec<&str> = list
+            .lines()
+            .map(|l| l.trim().trim_end_matches(','))
+            .filter(|l| l.contains("::"))
+            .collect();
+        assert!(commands.iter().any(|c| c.starts_with("pty::")), "parsed the handler list");
+        for c in &commands {
+            assert!(!c.to_lowercase().contains("bmad"), "BMAD command still registered: {c}");
+        }
+        for module in ["mod bmad;", "mod bmadconfig;", "mod bmadswitch;", "mod bmadv6;"] {
+            assert!(!src.lines().any(|l| l.trim().trim_start_matches("pub ") == module), "{module} is still compiled in");
+        }
+    }
+
     #[test]
     fn project_root_is_the_nearest_git_ancestor() {
         let d = std::env::temp_dir().join(format!("ade_projroot_{}", std::process::id()));

@@ -296,7 +296,6 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tiny_http",
- "toml 0.8.2",
 ]
 
 [[package]]

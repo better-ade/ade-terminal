@@ -1,21 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useSettingsStore } from "../stores/settingsStore";
-import { askKeepOrSwitch, askMethodology, useMethodologyPrompt, versionToSetUp, type MethodologyAnswer } from "./methodologyPrompt";
-import {
-  bmadRootOf, detectOnDisk, isKept, isSetupCandidate, normRoot, setUpProject, setupDeclined, switchBlock, type SetupFailure, type SwitchBlock,
-} from "./projectSetup";
+import { isSetupCandidate, normRoot, setUpProject, setupDeclined } from "./projectSetup";
 import { useTabStore } from "../stores/tabStore";
 
 const KEY = "ade-recent-projects";
 const MAX = 8;
 
-/**
- * Open a new tab: ask "terminal or project?" first unless that's turned off.
- * Not while the BMAD version question is open: it has to be answered first, and
- * a second dialog beneath it could open the same folder twice.
- */
+/** Open a new tab: ask "terminal or project?" first unless that's turned off. */
 export function requestNewTab() {
-  if (useMethodologyPrompt.getState().request) return;
   if (useSettingsStore.getState().askOnNewTab) window.dispatchEvent(new CustomEvent("request-new-tab"));
   else useTabStore.getState().addTab();
 }
@@ -46,79 +38,26 @@ export function forgetProject(path: string) {
   }
 }
 
-/** The project that opening `path` is about; null when it neither sets up nor asks. */
-async function setupRootFor(path: string): Promise<string | null> {
+/** The project that opening `path` sets up; null when it doesn't. */
+function setupRootFor(path: string): string | null {
   if (!useSettingsStore.getState().autoProjectSetup) return null;
-  // A folder picked to be a project is the project, unless a folder above it
-  // already has BMAD: then that one is.
-  const root = normRoot((await bmadRootOf(path))?.root ?? path);
-  return isSetupCandidate(root) ? root : null;
-}
-
-/**
- * What a project whose setup was undone is on, when it still has to answer
- * keep-or-switch; null when there is nothing to ask. It is never asked which
- * version to set up, and one whose switch didn't finish opens as it is.
- */
-async function declinedAnswer(root: string): Promise<MethodologyAnswer | null> {
-  if (isKept(root)) return null;
-  const methodology = await detectOnDisk(root).catch(() => null);
-  if (!methodology || (await switchBlock(root))) return null;
-  return { kind: "chosen", methodology, asked: false };
+  // A folder picked to be a project is the project.
+  const root = normRoot(path);
+  return isSetupCandidate(root) && !setupDeclined(root) ? root : null;
 }
 
 /**
  * Open a terminal tab in a project folder, remember it, and set the project up
- * (BMAD, the ADE methodology, the role agents) unless that's turned off.
- *
- * A project with no BMAD is asked which version first; one that has BMAD and
- * hasn't been asked before is asked to keep it or switch. Both must be
- * answered: until then the folder is neither opened nor remembered. A project
- * whose setup was undone is asked only the second, and Keep leaves it as it
- * is: nothing is set up there unless it is switched. That also
- * keeps the cd hook from asking about the same project at the same moment, and
- * means a switch runs before any terminal sits in the folders it moves.
+ * (the ADE methodology, the role agents) unless that's turned off or the
+ * person undid an earlier setup there.
  */
 export async function openProjectTab(path: string): Promise<void> {
-  // Opened as it is, with no setup: a terminal there is how a switch that
-  // didn't finish gets resolved.
-  const openBlocked = (block: SwitchBlock) => {
-    rememberProject(path);
-    useTabStore.getState().addTab(undefined, path);
-    const detail: SetupFailure = { why: block.reason, archiveFile: block.archiveFile };
-    window.dispatchEvent(new CustomEvent("project-setup-failed", { detail }));
-  };
-  const root = await setupRootFor(path);
-  const declined = !!root && setupDeclined(root);
-  const answer = !root ? null : declined ? await declinedAnswer(root) : await askMethodology(root);
-  if (answer?.kind === "blocked") return openBlocked(answer);
-  // Not answered: a question about another project took this one's place.
-  if (answer && answer.kind !== "chosen") return;
-  // Only New Tab asks this, and only until it is answered: the cd hook never does.
-  let settled = !!answer && (!!answer.done || !!answer.switched);
-  if (root && answer && !answer.asked && !settled && !isKept(root)) {
-    const decision = await askKeepOrSwitch(root, answer.methodology);
-    if (decision.kind === "dismissed") return;
-    // Another project's switch has the dialog: not asked, so not kept either.
-    if (decision.kind === "blocked") return openBlocked(decision);
-    settled = decision.kind !== "kept";
-    if (!settled) {
-      // Checked again, whatever happened while the question was open: a switch
-      // tried from it may have failed and left its journal unfinished, and
-      // setting up the old version would write over paths that journal tells
-      // the person to move back by hand.
-      const block = await switchBlock(root);
-      if (block) return openBlocked(block);
-    }
-  }
+  const root = setupRootFor(path);
   rememberProject(path);
   useTabStore.getState().addTab(undefined, path);
-  // Settled: set up by another route while a question was open, or by a switch,
-  // which reports through its own event.
-  if (!root || !answer || settled || declined) return;
+  if (!root) return;
   // Not awaited: the terminal is usable while the files are written.
-  versionToSetUp(root, answer)
-    .then((methodology) => setUpProject(root, methodology))
+  setUpProject(root)
     .then((result) => window.dispatchEvent(new CustomEvent("project-setup-done", { detail: result })))
     .catch((e) => window.dispatchEvent(new CustomEvent("project-setup-failed", { detail: { why: `Project setup failed: ${e}` } })));
 }

@@ -6,16 +6,13 @@ import SubTerminalStrip, { SubTerminalAnnouncer, SUB_TERMINAL_CONTENT_ID } from 
 import Scratchpad, { type ScratchpadHandle } from "./components/Scratchpad";
 import ShortcutsBar from "./components/ShortcutsBar";
 import ConfirmDialog from "./components/ConfirmDialog";
-import { useProjectSetup, announceFailure, announceSetup, announceSwitch } from "./hooks/useProjectSetup";
+import { useProjectSetup, announceFailure, announceSetup } from "./hooks/useProjectSetup";
 import type { SetupFailure, SetupResult } from "./lib/projectSetup";
-import { SWITCH_DONE_EVENT, type SwitchDone } from "./lib/bmadSwitch";
 import { writePty } from "./lib/terminalCommands";
 import Toast from "./components/Toast";
-import MethodologyPromptHost from "./components/MethodologyPrompt";
-import { togglePalette, useMethodologyPrompt } from "./lib/methodologyPrompt";
 import { hideSplash } from "./lib/splash";
 import { useTerminalFocusGuard } from "./hooks/useTerminalFocusGuard";
-import { useContextGuard, toastLifetime, withdrawToast, type GuardToast } from "./hooks/useContextGuard";
+import { useContextGuard, toastLifetime, type GuardToast } from "./hooks/useContextGuard";
 
 // Lazy-load heavy components for faster startup
 const SettingsPanel = lazy(() => import("./components/SettingsPanel"));
@@ -30,7 +27,6 @@ const BrowserTab = lazy(() => import("./components/BrowserTab"));
 const RecordingPlayer = lazy(() => import("./components/RecordingPlayer"));
 const FleetPanel = lazy(() => import("./components/fleet/FleetPanel"));
 const FleetTab = lazy(() => import("./components/fleet/FleetTab"));
-const BoardPanel = lazy(() => import("./components/board/BoardPanel"));
 const ContractsPanel = lazy(() => import("./components/ContractsPanel"));
 const TokensPanel = lazy(() => import("./components/TokensPanel"));
 const IntegrationsPanel = lazy(() => import("./components/IntegrationsPanel"));
@@ -74,7 +70,6 @@ export default function App() {
     openForFile: openPreviewForFile,
   } = usePreviewPanel();
   const [fleetOpen, setFleetOpen] = useState(false);
-  const [boardOpen, setBoardOpen] = useState(false);
   const [contractsOpen, setContractsOpen] = useState(false);
   const [tokensOpen, setTokensOpen] = useState(false);
   const [newTabOpen, setNewTabOpen] = useState(false);
@@ -174,24 +169,17 @@ export default function App() {
     const ms = toastLifetime(t);
     toastTimer.current = ms === null ? null : window.setTimeout(() => setToast(null), ms);
   }, []);
-  // Only a sticky toast is withdrawn, and it has no timer to clear.
-  const withdraw = useCallback((key: string) => setToast((current) => withdrawToast(current, key)), []);
   useContextGuard(activeCwd, showToast);
-  useProjectSetup(activeCwd, showToast, withdraw);
-  // Setups run elsewhere (new-tab dialog, command palette) report here. A BMAD
-  // switch has its own event: a setup's toast offers Undo, and undoing the
-  // setup a switch ran would leave the project with no BMAD.
+  useProjectSetup(activeCwd, showToast);
+  // Setups run elsewhere (new-tab dialog, command palette) report here.
   useEffect(() => {
     const onSetup = (e: Event) => announceSetup((e as CustomEvent<SetupResult>).detail, showToast);
     const onSetupFailed = (e: Event) => announceFailure((e as CustomEvent<SetupFailure>).detail, showToast);
-    const onSwitch = (e: Event) => announceSwitch((e as CustomEvent<SwitchDone>).detail, showToast);
     window.addEventListener("project-setup-done", onSetup);
     window.addEventListener("project-setup-failed", onSetupFailed);
-    window.addEventListener(SWITCH_DONE_EVENT, onSwitch);
     return () => {
       window.removeEventListener("project-setup-done", onSetup);
       window.removeEventListener("project-setup-failed", onSetupFailed);
-      window.removeEventListener(SWITCH_DONE_EVENT, onSwitch);
     };
   }, [showToast]);
   useTerminalFocusGuard();
@@ -221,7 +209,6 @@ export default function App() {
   const toggleShortcuts = useCallback(() => setShortcutsOpen((prev) => !prev), []);
   const toggleTabSwitcher = useCallback(() => setSwitcherOpen((prev) => !prev), []);
   const toggleContracts = useCallback(() => setContractsOpen((prev) => !prev), []);
-  const toggleBoard = useCallback(() => setBoardOpen((prev) => !prev), []);
 
   // Panel toggles dispatched as window events (command palette, other panels).
   useEffect(() => {
@@ -229,21 +216,19 @@ export default function App() {
     const toggles: [string, () => void][] = [
       ["toggle-zoom-pane", toggleZoom],
       ["toggle-fleet", toggleFleet],
-      ["toggle-board", toggleBoard],
       ["toggle-tokens", toggleTokens],
       ["toggle-integrations", toggleIntegrations],
       ["open-secrets", () => setIntegrations("secrets")],
       ["open-antislop", () => setIntegrations("antislop")],
       ["open-agents", () => setIntegrations("agents")],
-      // requestNewTab holds this back while the BMAD version question is open; so does this.
-      ["request-new-tab", () => { if (!useMethodologyPrompt.getState().request) setNewTabOpen(true); }],
+      ["request-new-tab", () => setNewTabOpen(true)],
       ["toggle-shortcuts", toggleShortcuts],
       ["toggle-tab-switcher", toggleTabSwitcher],
       ["toggle-contracts", toggleContracts],
     ];
     for (const [name, fn] of toggles) window.addEventListener(name, fn);
     return () => { for (const [name, fn] of toggles) window.removeEventListener(name, fn); };
-  }, [toggleFleet, toggleBoard, toggleTokens, toggleIntegrations, toggleShortcuts, toggleTabSwitcher, toggleContracts]);
+  }, [toggleFleet, toggleTokens, toggleIntegrations, toggleShortcuts, toggleTabSwitcher, toggleContracts]);
 
   // Contract quick actions from the command palette.
   useEffect(() => {
@@ -276,8 +261,7 @@ export default function App() {
     };
   }, []);
 
-  // Not over the BMAD version question or the switch's confirm step.
-  const toggleCommandPalette = useCallback(() => setPaletteOpen(togglePalette), []);
+  const toggleCommandPalette = useCallback(() => setPaletteOpen((prev) => !prev), []);
 
   const toggleScratchpad = useCallback(() => {
     const sp = scratchpadRef.current;
@@ -328,7 +312,6 @@ export default function App() {
     toggleCommandPalette,
     toggleAgentPicker,
     togglePreview,
-    toggleBoard,
     toggleFleet,
     toggleFileBrowser,
     openOrchestrator,
@@ -397,11 +380,6 @@ export default function App() {
             />
           </Suspense>
         )}
-        {boardOpen && (
-          <Suspense fallback={null}>
-            <BoardPanel cwd={activeCwd} onClose={() => setBoardOpen(false)} />
-          </Suspense>
-        )}
       </div>
       <Scratchpad ref={scratchpadRef} />
       {showShortcutBar && <ShortcutsBar />}
@@ -455,8 +433,6 @@ export default function App() {
         />
       )}
       <SubTerminalAnnouncer />
-      {/* After the panels in the DOM, so it sits over one that raised it. */}
-      <MethodologyPromptHost />
       {toast && <Toast toast={toast} onDismiss={() => setToast(null)} />}
     </div>
   );

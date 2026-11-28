@@ -7,7 +7,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
  * the folder that is passed or shown.
  */
 const tauri = vi.hoisted(() => ({
-  byDir: {} as Record<string, "v4" | "v6" | null>,
   applies: [] as Record<string, unknown>[],
   listed: [] as string[],
 }));
@@ -18,16 +17,11 @@ vi.mock("@tauri-apps/api/core", () => ({
     switch (command) {
       case "project_root":
         return String(args.path).replace(/\/src$/, "");
-      case "bmad_switch_pending":
-        return [];
       case "project_setup_status":
-        return {
-          isGit: true, missing: [], needsImport: false, bmadInstalled: false, stacks: [],
-          methodology: tauri.byDir[args.root as string] ?? null,
-        };
+        return { isGit: true, missing: [], needsImport: false, stacks: [] };
       case "project_setup_apply":
         tauri.applies.push(args);
-        return { created: [], appendedImport: false, agents: 0, bmadFiles: 0 };
+        return { created: [], appendedImport: false, agents: 0 };
       case "list_directory":
         tauri.listed.push(String(args.path));
         return [];
@@ -49,8 +43,6 @@ Element.prototype.scrollIntoView = vi.fn();
 
 import CommandPalette from "../CommandPalette";
 import FileBrowser from "../FileBrowser";
-import MethodologyPromptHost from "../MethodologyPrompt";
-import { __resetPromptForTests } from "../../lib/methodologyPrompt";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useFileBrowserStore } from "../../stores/fileBrowserStore";
 import { useTabStore, type Tab, type PaneNode } from "../../stores/tabStore";
@@ -70,36 +62,23 @@ const tabWithSubInSight: Tab = {
 beforeEach(() => {
   cleanup();
   localStorage.clear();
-  tauri.byDir = {};
   tauri.applies.length = 0;
   tauri.listed.length = 0;
   folders.byPane = { "own-pane": "/code/shop/src", "sub-pane": "/elsewhere/src" };
-  __resetPromptForTests();
   useSettingsStore.getState().setAutoProjectSetup(true);
   useTabStore.setState({ tabs: [tabWithSubInSight], activeTabId: "t", closedTabs: [] });
 });
 
 const renderPalette = () =>
-  render(
-    <>
-      <CommandPalette onClose={vi.fn()} onToggleScratchpad={vi.fn()} onOpenAgentPicker={vi.fn()} />
-      <MethodologyPromptHost />
-    </>,
-  );
+  render(<CommandPalette onClose={vi.fn()} onToggleScratchpad={vi.fn()} onOpenAgentPicker={vi.fn()} />);
 
 describe("call sites follow the own view", () => {
-  it("Set up project and the BMAD switch use the own folder", async () => {
-    // The two folders are on different versions, so either reading shows.
-    tauri.byDir = { "/code/shop": "v4", "/elsewhere": "v6" };
+  it("Set up project uses the own folder", async () => {
     renderPalette();
 
-    // The switch offered is the own project's: v4 → v6.
-    expect(await screen.findByText("BMAD: Switch to v6…")).toBeTruthy();
-    expect(screen.queryByText("BMAD: Switch to v4…")).toBeNull();
-
-    fireEvent.click(screen.getByText("Project: Set up BMAD, methodology and agents"));
+    fireEvent.click(screen.getByText("Project: Set up methodology and agents"));
     await waitFor(() => expect(tauri.applies).toHaveLength(1));
-    expect(tauri.applies[0]).toMatchObject({ root: "/code/shop", methodology: "v4" });
+    expect(tauri.applies[0]).toMatchObject({ root: "/code/shop" });
   });
 
   it("FileBrowser shows the own folder", async () => {

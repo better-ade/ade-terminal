@@ -13,13 +13,12 @@ vi.mock("../../hooks/useTerminal", () => ({ getPtyCwd: vi.fn(async () => null) }
 
 import PreviewPanel from "../PreviewPanel";
 import FileBrowser from "../FileBrowser";
-import BoardPanel from "../board/BoardPanel";
 
 /**
  * jsdom lays nothing out, so the window-fit guarantee is checked as a budget:
  * every side panel may shrink (flex-shrink 1) down to a stated minimum, and
  * those minimums plus the terminal area's fit the default 1200 px window. The
- * real layout with all three panels open at 1200 px still needs a look in the
+ * real layout with both panels open at 1200 px still needs a look in the
  * running app.
  */
 const DEFAULT_WINDOW = 1200;
@@ -33,12 +32,11 @@ function terminalMinWidth(): number {
   return Number(m[1]);
 }
 
-describe("side panels with file browser, Preview and board all open", () => {
+describe("side panels with file browser and Preview both open", () => {
   const panels = () => {
     const { container: fb } = render(<FileBrowser />);
     const { container: pv } = render(<PreviewPanel onClose={vi.fn()} />);
-    const { container: bd } = render(<BoardPanel cwd={null} onClose={vi.fn()} />);
-    return { fileBrowser: outer(fb), preview: outer(pv), board: outer(bd) };
+    return { fileBrowser: outer(fb), preview: outer(pv) };
   };
 
   it("lets every side panel shrink, to a stated minimum", () => {
@@ -50,7 +48,7 @@ describe("side panels with file browser, Preview and board all open", () => {
 
   it("fits the minimums and the terminal area in the default window", () => {
     const p = panels();
-    const total = terminalMinWidth() + [p.fileBrowser, p.preview, p.board].reduce((n, el) => n + parseFloat(el.style.minWidth), 0);
+    const total = terminalMinWidth() + [p.fileBrowser, p.preview].reduce((n, el) => n + parseFloat(el.style.minWidth), 0);
     expect(total).toBeLessThanOrEqual(DEFAULT_WINDOW);
   });
 });

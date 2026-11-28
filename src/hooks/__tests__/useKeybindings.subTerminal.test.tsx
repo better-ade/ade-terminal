@@ -20,7 +20,7 @@ const noop = () => {};
 const actions = {
   toggleScratchpad: noop, closeScratchpad: noop, sendScratchpad: noop, copyScratchpad: noop,
   saveNoteScratchpad: noop, sendEnterToTerminal: noop, toggleCommandPalette: noop, toggleAgentPicker: noop,
-  togglePreview: noop, toggleBoard: noop, toggleFleet: noop, toggleFileBrowser: noop, openOrchestrator: noop,
+  togglePreview: noop, toggleFleet: noop, toggleFileBrowser: noop, openOrchestrator: noop,
   toggleContracts: noop, toggleTokens: noop, toggleIntegrations: noop, toggleShortcuts: noop, toggleTabSwitcher: noop,
   requestCloseTab: vi.fn(), requestClosePane: vi.fn(), requestCloseView: vi.fn(), isScratchpadOpen: false,
 };

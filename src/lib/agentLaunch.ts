@@ -4,7 +4,6 @@ import { getDomain } from "../data/domains";
 import { composeRoleMarkdown, toModelfile } from "./agentComposition";
 import { buildLaunchCommand, UNTYPEABLE } from "./agentCommand";
 import { ensureRoleDir, rolePathFor, type AgentSpec } from "./agentSpec";
-import { methodologyOf } from "./projectSetup";
 import { loadLaunchRules, RULES_UNAVAILABLE, type LaunchRules } from "./launchRules";
 import { runInNewTabPane } from "./terminalCommands";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -21,7 +20,8 @@ export type PreparedLaunch = { ok: true; command: string } | { ok: false; error:
  */
 export async function prepareAgentLaunch(
   spec: AgentSpec,
-  cwd: string | undefined,
+  // Where the agent runs. Its role file no longer depends on it.
+  _cwd: string | undefined,
   opts: { continuous?: boolean; task?: string } = {},
 ): Promise<PreparedLaunch> {
   const role = getRole(spec.roleId);
@@ -42,10 +42,7 @@ export async function prepareAgentLaunch(
   } catch (err) {
     return { ok: false, error: `Could not create the role directory: ${err}` };
   }
-  // Only the BMAD tasks for the project's methodology, in a role file keyed by
-  // it, so a launch in a project on the other methodology never shares it.
-  const methodology = await methodologyOf(cwd);
-  const rolePath = rolePathFor(spec, roleDir, methodology);
+  const rolePath = rolePathFor(spec, roleDir, "v6");
 
   const settings = useSettingsStore.getState();
   const result = buildLaunchCommand(spec.provider, rolePath, {
@@ -60,7 +57,7 @@ export async function prepareAgentLaunch(
 
   try {
     // Ollama takes a system prompt only through a Modelfile.
-    const roleText = composeRoleMarkdown(role, domain, methodology);
+    const roleText = composeRoleMarkdown(role, domain, "v6");
     const content = spec.provider === "ollama" ? toModelfile(roleText, settings.ollamaModel || "deepseek-r1") : roleText;
     await invoke("write_text_file", { path: rolePath, content });
   } catch (err) {

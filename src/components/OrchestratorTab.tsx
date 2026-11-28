@@ -9,7 +9,6 @@ import { getDomain } from "../data/domains";
 import { composeRoleMarkdown } from "../lib/agentComposition";
 import { specFromCurated, rolePathFor, ensureRoleDir } from "../lib/agentSpec";
 import { buildLaunchCommand, shellQuote } from "../lib/agentCommand";
-import { methodologyOf } from "../lib/projectSetup";
 import { loadLaunchRules, RULES_UNAVAILABLE, type LaunchRules } from "../lib/launchRules";
 import { sendOrchestratorMessage, type ChatTurn } from "../lib/anthropic";
 import { invoke } from "@tauri-apps/api/core";
@@ -284,11 +283,7 @@ export default function OrchestratorTab({ sessionId }: OrchestratorTabProps) {
     } catch (err) {
       return abortDispatch(`Could not create the role directory for "${task.title}": ${err}`);
     }
-    // Only the BMAD tasks for the project's own methodology (v6 when the
-    // project is on neither, or there is no project directory), in a role file
-    // keyed by it.
-    const methodology = await methodologyOf(projectDir);
-    const rolePath = rolePathFor(spec, roleDir, methodology);
+    const rolePath = rolePathFor(spec, roleDir, "v6");
 
     // `-p` can't show a prompt, so an asked tool is refused here, not run.
     let rules: LaunchRules;
@@ -315,7 +310,7 @@ export default function OrchestratorTab({ sessionId }: OrchestratorTabProps) {
     // user-authored task description still travels as a shell argument, and
     // it is quoted with the same shellQuote every other provider argument
     // already goes through — not a second, ad hoc escaper.
-    const markdown = composeRoleMarkdown(role, domain, methodology);
+    const markdown = composeRoleMarkdown(role, domain, "v6");
     try {
       await invoke("write_text_file", { path: rolePath, content: markdown });
     } catch (err) {

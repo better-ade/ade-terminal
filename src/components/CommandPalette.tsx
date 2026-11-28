@@ -1,5 +1,4 @@
 import { requestNewTab } from "../lib/newTab";
-import { bmadRootOf } from "../lib/projectSetup";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { claimKeyboard } from "../lib/keyboardOwner";
 import { modLabel, shortcutLabel as L } from "../lib/shortcuts";
@@ -22,13 +21,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   Panels: "#bc8cff",
   Themes: "#d29922",
   Recording: "#ff7b72",
-  BMAD: "#2dd4bf",
   Contracts: "#f0883e",
 };
 
-// One import for every caller: the palette asks the terminal module for the
-// pane's folder both on open (to offer the switch) and when a command runs,
-// and two imports of it in flight at once is needless.
+// One import for every caller: two imports of the terminal module in flight
+// at once is needless.
 let terminalLoad: Promise<typeof import("../hooks/useTerminal")> | null = null;
 const terminalModule = () => (terminalLoad ??= import("../hooks/useTerminal"));
 
@@ -52,23 +49,6 @@ export default function CommandPalette({ onClose, onToggleScratchpad, onOpenAgen
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const { tabs, activeTabId, addTab, setActiveTab } = useTabStore();
-
-  // The BMAD project the tab's folder (its own view) is in, and its version: the
-  // palette offers the switch to the other one. Null until that is known, and
-  // for a pane with no folder or a project with no BMAD.
-  const [bmadProject, setBmadProject] = useState<{ root: string; methodology: "v4" | "v6" } | null>(null);
-  useEffect(() => {
-    let live = true;
-    setBmadProject(null);
-    const tab = useTabStore.getState().tabs.find((t) => t.id === activeTabId);
-    if (!tab) return;
-    terminalModule()
-      .then(({ getPtyCwd }) => getPtyCwd(tabFolderPaneId(tab)))
-      .then((dir) => (dir ? bmadRootOf(dir) : null))
-      .then((found) => { if (live) setBmadProject(found); })
-      .catch(() => {});
-    return () => { live = false; };
-  }, [activeTabId]);
 
   const items = useMemo<PaletteItem[]>(() => {
     const activeTab = tabs.find((t) => t.id === activeTabId);
@@ -120,55 +100,28 @@ export default function CommandPalette({ onClose, onToggleScratchpad, onOpenAgen
       } },
       { id: "fleet-tab", label: "Fleet: Open tab", category: "Panels", action: () => { useTabStore.getState().addFleetTab(); onClose(); } },
       { id: "project-agents", label: "Agents: Add or remove agents in this project", category: "Project", action: () => { window.dispatchEvent(new CustomEvent("open-agents")); onClose(); } },
-      { id: "project-setup", label: "Project: Set up BMAD, methodology and agents", category: "Project", action: () => {
+      { id: "project-setup", label: "Project: Set up methodology and agents", category: "Project", action: () => {
         onClose();
         const cwd = useTabStore.getState().tabs.find((t) => t.id === activeTabId);
         // Every failure below used to land in a bare .catch(() => {}): the
         // palette closed and nothing happened at all — no setup, no event, no
         // error. Say what went wrong instead.
-        const failed = (why: string, archiveFile?: string) =>
-          window.dispatchEvent(new CustomEvent("project-setup-failed", { detail: { why, archiveFile } }));
+        const failed = (why: string) =>
+          window.dispatchEvent(new CustomEvent("project-setup-failed", { detail: { why } }));
         if (!cwd) return failed("No active tab to set up.");
         terminalModule().then(({ getPtyCwd }) =>
           getPtyCwd(tabFolderPaneId(cwd)).then(async (dir) => {
             // getPtyCwd is null for any pane with no live shell — an
             // orchestrator, editor, fleet or browser tab.
             if (!dir) return failed("This tab has no folder. Open a terminal in the project first.");
-            const { setupRootOf } = await import("../lib/projectSetup");
-            const { askAndSetUp } = await import("../lib/methodologyPrompt");
-            // A project with no BMAD is asked which version first; the question must be answered.
-            await askAndSetUp(await setupRootOf(dir));
+            const { setUpOnRequest, setupRootOf } = await import("../lib/projectSetup");
+            await setUpOnRequest(await setupRootOf(dir));
           }),
         ).catch(async (err) => {
-          // A blocked project (an unfinished switch, one running) isn't a failed setup.
-          const { isRefusal } = await import("../lib/methodologyPrompt");
-          if (isRefusal(err)) failed(err.reason, err.archiveFile);
-          else failed(`Project setup failed: ${err}`);
+          const { NOT_A_PROJECT } = await import("../lib/projectSetup");
+          failed(err === NOT_A_PROJECT ? NOT_A_PROJECT : `Project setup failed: ${err}`);
         });
       } },
-      ...(bmadProject
-        ? [{
-            id: "bmad-switch",
-            label: `BMAD: Switch to ${bmadProject.methodology === "v6" ? "v4" : "v6"}…`,
-            category: "BMAD",
-            action: () => {
-              onClose();
-              // Never switches on this click: the confirm step shows what would move first.
-              import("../lib/methodologyPrompt")
-                .then(async ({ switchOnDemand, isRefusal }) => {
-                  try {
-                    await switchOnDemand(bmadProject.root);
-                  } catch (err) {
-                    // The reason as it is when the switch isn't allowed; a failure says what was being done.
-                    throw isRefusal(err) ? String(err) : `BMAD switch failed: ${err}`;
-                  }
-                })
-                // Its own title: nothing was being set up.
-                .catch((why) => window.dispatchEvent(new CustomEvent("project-setup-failed", { detail: { why: String(why), title: "BMAD switch" } })));
-            },
-          }]
-        : []),
-      { id: "board-toggle", label: "View: Toggle stage board", shortcut: L("board"), category: "Panels", action: () => { window.dispatchEvent(new CustomEvent("toggle-board")); onClose(); } },
       { id: "tab-switcher", label: "Tabs: Go to tab", shortcut: L("tabSwitcher"), category: "Tabs", action: () => { onClose(); window.dispatchEvent(new CustomEvent("toggle-tab-switcher")); } },
       { id: "tab-reopen", label: "Tabs: Reopen closed tab", shortcut: L("reopenTab"), category: "Tabs", action: () => { onClose(); useTabStore.getState().reopenClosedTab(); } },
       { id: "shortcuts", label: "Help: Keyboard shortcuts", shortcut: L("shortcuts"), category: "Help", action: () => { window.dispatchEvent(new CustomEvent("toggle-shortcuts")); onClose(); } },
@@ -245,7 +198,7 @@ export default function CommandPalette({ onClose, onToggleScratchpad, onOpenAgen
     });
 
     return actions;
-  }, [tabs, activeTabId, addTab, setActiveTab, onClose, onToggleScratchpad, onOpenAgentPicker, onTogglePreview, onToggleFileBrowser, onOpenRecordings, bmadProject]);
+  }, [tabs, activeTabId, addTab, setActiveTab, onClose, onToggleScratchpad, onOpenAgentPicker, onTogglePreview, onToggleFileBrowser, onOpenRecordings]);
 
   const filtered = useMemo(() => {
     if (!query) return items;

@@ -628,7 +628,7 @@ export default function SettingsPanel() {
                   style={{ accentColor: "var(--accent)" }}
                 />
                 <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                  Set up every project I open: BMAD, the ADE methodology and all agents (only missing files are added)
+                  Set up every project I open: the ADE methodology and all agents (only missing files are added)
                 </span>
               </label>
 

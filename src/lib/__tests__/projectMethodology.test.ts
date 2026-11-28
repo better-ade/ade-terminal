@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync } from "node:fs";
-import { resolve } from "node:path";
 import {
-  ARCHIVE_RULE_MARKER, BMAD_PARAGRAPH, BMAD_SHIPPED, CLAUDE_MD_IMPORT, CLAUDE_MD_IMPORT_MARKER, ROLES, RULES_MD, bmadSection, bmadText, methodologyFiles,
+  ARCHIVE_RULE_MARKER, CLAUDE_MD_IMPORT, CLAUDE_MD_IMPORT_MARKER, ROLES, RULES_MD, methodologyFiles,
 } from "../projectMethodology";
 import { isSetupCandidate, summarize } from "../projectSetup";
 
@@ -113,97 +111,9 @@ describe("ADE methodology", () => {
     expect(rules).toMatch(/Generated with/);
   });
 
-  const claudeMd = (methodology: "v4" | "v6") => methodologyFiles("demo", [], methodology).find((f) => f.path === "CLAUDE.md")!.content;
-
-  it("tells a v6 project to use the v6 skills, and names no other version", () => {
-    const claude = claudeMd("v6");
-    expect(claude).toContain(BMAD_PARAGRAPH.v6);
-    expect(methodologyFiles("demo").find((f) => f.path === "CLAUDE.md")!.content, "v6 is the default").toBe(claude);
-    for (const old of ["v4", ".bmad-core", "/BMad:"]) expect(claude).not.toContain(old);
-    expect(BMAD_PARAGRAPH.v6).toMatch(/^- \*\*BMAD v6\*\* is how work is done in this project\./);
-    expect(BMAD_PARAGRAPH.v6).not.toMatch(/optional/i);
-    // Their locations win; Done stays with the verification command.
-    expect(BMAD_PARAGRAPH.v6).toMatch(/where that differs from the project layout in this file,\s+use the BMAD location/);
-    expect(BMAD_PARAGRAPH.v6).toMatch(/a story is Done only when the\s+verification command passes/);
-    expect(BMAD_PARAGRAPH.v6).toMatch(/a BMAD skill can \*\*never override\*\* the verification command/);
-  });
-
-  it("tells a v4 project about the v4 slash commands, and names no other version", () => {
-    const claude = claudeMd("v4");
-    expect(claude).toContain(BMAD_PARAGRAPH.v4);
-    // No skill: `.bmad-core` is the only "bmad-" a v4 project is told about.
-    expect(claude).not.toMatch(/(?<!\.)bmad-[a-z]/);
-    for (const other of ["_bmad-output", "v6", ".claude/skills"]) expect(claude).not.toContain(other);
-    expect(BMAD_PARAGRAPH.v4).toMatch(/^- \*\*BMAD v4\*\* tasks, checklists, templates and workflows: the `\/BMad:tasks:` slash commands\n {2}\(`\.bmad-core\/`\)\. These are optional helpers/);
-    expect(BMAD_PARAGRAPH.v4).toMatch(/a BMAD task can \*\*never override\*\*/);
-  });
-
-  it("says nothing about where in the file the paragraph sits, which a section at the end would make false", () => {
-    for (const paragraph of Object.values(BMAD_PARAGRAPH)) expect(paragraph).not.toMatch(/\b(above|below)\b/);
-    expect(BMAD_PARAGRAPH.v4).toMatch(/the same jobs as ADE's\s+sub-agents,/);
-  });
-
-  it("changes nothing of CLAUDE.md between the versions but the BMAD paragraph", () => {
-    expect(claudeMd("v4").replace(BMAD_PARAGRAPH.v4, BMAD_PARAGRAPH.v6)).toBe(claudeMd("v6"));
-  });
-
-  it("names only skills that are bundled", () => {
-    const bundled = readdirSync(resolve(__dirname, "../../../src-tauri/resources/bmad-v6/skills"));
-    const named = [...BMAD_PARAGRAPH.v6.matchAll(/`(bmad[a-z-]*)`/g)].map((m) => m[1]);
-    expect(named).toEqual(["bmad-prd", "bmad-architecture", "bmad-ux", "bmad-ticket", "bmad-build", "bmad-code-review", "bmad"]);
-    for (const skill of named) expect(bundled, skill).toContain(skill);
-  });
-
-  it("knows every BMAD paragraph ADE has shipped, as it reads in the file", () => {
-    const shipped = [
-      // v0.17.0 to v0.17.5.
-      "- **BMAD** personas and tasks: the `/BMad:` slash commands (`.bmad-core/`).",
-      // Commit 3dc4ace.
-      [
-        "- **BMAD** personas and tasks: the `/BMad:` slash commands (`.bmad-core/`). These are",
-        "  optional helpers you may run inside the flow. The ADE rules in `.ade/rules.md` always",
-        "  win: a BMAD task can **never override** the verification command, the Definition of",
-        "  Done, or anything in this file. Where they disagree, stop and surface the conflict.",
-      ].join("\n"),
-      // v0.18.0 to v0.19.0.
-      [
-        "- **BMAD** tasks, checklists, templates and workflows: the `/BMad:tasks:` slash commands",
-        "  (`.bmad-core/`). These are optional helpers you may run inside the flow. BMAD's own",
-        "  personas are deliberately not installed — eight of them are the same jobs as the",
-        "  sub-agents above, and two definitions of Done is worse than one. The ADE rules in `.ade/rules.md` always",
-        "  win: a BMAD task can **never override** the verification command, the Definition of",
-        "  Done, or anything in this file. Where they disagree, stop and surface the conflict.",
-      ].join("\n"),
-      // v0.20.0 and v0.20.1.
-      [
-        "- **BMAD** tasks, checklists, templates and workflows, in the version `.ade/methodology`",
-        "  names. **v4**: the `/BMad:tasks:` slash commands in `.bmad-core/`. **v6**: the skills",
-        "  in `.claude/skills/`, with work in `_bmad-output/`. Either way these are optional",
-        "  helpers you may run inside the flow. BMAD's own",
-        "  personas are deliberately not installed — eight of them are the same jobs as the",
-        "  sub-agents above, and two definitions of Done is worse than one. The ADE rules in `.ade/rules.md` always",
-        "  win: a BMAD task can **never override** the verification command, the Definition of",
-        "  Done, or anything in this file. Where they disagree, stop and surface the conflict.",
-      ].join("\n"),
-      BMAD_PARAGRAPH.v4,
-      BMAD_PARAGRAPH.v6,
-    ];
-    for (const text of shipped) expect(BMAD_SHIPPED).toContain(text);
-    expect(BMAD_SHIPPED).toHaveLength(shipped.length);
-    expect(new Set(BMAD_SHIPPED).size).toBe(BMAD_SHIPPED.length);
-    // Each is one bullet: nothing after it that a replacement would take with it.
-    for (const text of BMAD_SHIPPED) expect(text).toMatch(/^- \*\*BMAD[^\n]*(\n {2}\S[^\n]*)*$/);
-  });
-
-  it("wraps the paragraph in a marked section for a CLAUDE.md ADE didn't write", () => {
-    expect(bmadSection("v6")).toBe(`<!-- ade:bmad -->\n## BMAD\n\n${BMAD_PARAGRAPH.v6}\n<!-- /ade:bmad -->\n`);
-    const text = bmadText("v4");
-    expect(text.paragraph).toBe(BMAD_PARAGRAPH.v4);
-    expect(text.section).toBe(bmadSection("v4"));
-    expect(text.paragraphs).toEqual(BMAD_SHIPPED);
-    expect(text.sections).toHaveLength(BMAD_SHIPPED.length);
-    expect(text.sections).toContain(bmadSection("v6"));
-    expect([text.open, text.close]).toEqual(["<!-- ade:bmad -->", "<!-- /ade:bmad -->"]);
+  it("writes a CLAUDE.md with no BMAD paragraph: the app ships no BMAD (story ST1)", () => {
+    const claude = methodologyFiles("demo").find((f) => f.path === "CLAUDE.md")!.content;
+    expect(claude).not.toMatch(/\bBMAD\b|\.bmad-core|_bmad|\.claude\/skills|<!-- ade:bmad/);
   });
 
   it("gives the coding standards exactly one owner", () => {
@@ -227,12 +137,12 @@ describe("project setup", () => {
   });
 
   it("summarizes what a setup wrote", () => {
-    expect(summarize({ created: new Array(20).fill("x"), appendedImport: true, agents: 8, bmadFiles: 6 })).toBe("BMAD, 8 agents, the methodology and a line in CLAUDE.md");
-    expect(summarize({ created: [], appendedImport: false, agents: 0, bmadFiles: 0 })).toBeNull();
+    expect(summarize({ created: new Array(14).fill("x"), appendedImport: true, agents: 8 })).toBe("8 agents, the methodology and a line in CLAUDE.md");
+    expect(summarize({ created: [], appendedImport: false, agents: 0 })).toBeNull();
     // A settings file setup created is the attribution setting, not the methodology.
-    expect(summarize({ created: ["/p/.claude/settings.json"], appendedImport: false, agents: 0, bmadFiles: 0, attributionOff: true }))
+    expect(summarize({ created: ["/p/.claude/settings.json"], appendedImport: false, agents: 0, attributionOff: true }))
       .toBe("settings that turn off AI attribution");
-    expect(summarize({ created: new Array(3).fill("x"), appendedImport: false, agents: 1, bmadFiles: 0, attributionOff: true }))
+    expect(summarize({ created: new Array(3).fill("x"), appendedImport: false, agents: 1, attributionOff: true }))
       .toBe("1 agent, the methodology and settings that turn off AI attribution");
   });
 });

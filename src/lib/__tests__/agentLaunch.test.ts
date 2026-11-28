@@ -25,7 +25,6 @@ vi.mock("@tauri-apps/api/core", () => ({
     throw new Error(`unexpected ${cmd}`);
   }),
 }));
-vi.mock("../projectSetup", () => ({ methodologyOf: vi.fn(async () => "v6") }));
 vi.mock("../terminalCommands", () => ({
   runInNewTabPane: vi.fn(async (_name: string, _cwd: string, cmd: string) => { io.ran.push(cmd); return "pane-1"; }),
 }));

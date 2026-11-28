@@ -40,7 +40,6 @@ pub const SHARED_KEYS: &[&str] = &[
     "better-terminal-saved-notes",
     "better-terminal-orchestrator",
     "better-terminal-agent-tracker",
-    "ade-bmad-dismissed",
 ];
 
 /// State keys that belong to one machine (paths and scrollback are local).
