@@ -42,8 +42,7 @@ export default function NewTabDialog({ onClose }: { onClose: () => void }) {
 
   /**
    * Open a picked folder. A new project is `git init`ed first, while this
-   * dialog can still show why that failed. Then the dialog closes: asking
-   * which BMAD version, where the project has none, is the shared dialog's job.
+   * dialog can still show why that failed. Then the dialog closes.
    */
   const pick = async (path: string, isNew: boolean) => {
     if (opening.current) return;
@@ -114,7 +113,7 @@ export default function NewTabDialog({ onClose }: { onClose: () => void }) {
           </li>
           <li role="option" aria-selected={cursor === 1} onMouseEnter={() => setCursor(1)} onClick={create}>
             <span className="new-tab-icon" aria-hidden="true">+</span>
-            <span className="new-tab-main"><b>New project…</b><small>Pick or create a folder: git, BMAD, the methodology and all agents</small></span>
+            <span className="new-tab-main"><b>New project…</b><small>Pick or create a folder: git, the methodology and all agents</small></span>
             <kbd>N</kbd>
           </li>
           <li role="option" aria-selected={cursor === 2} onMouseEnter={() => setCursor(2)} onClick={browse}>

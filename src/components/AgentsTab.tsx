@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { CLAUDE_MD_IMPORT_MARKER, STACK_AGENTS, STACK_LABELS, agentCatalog, type AgentEntry } from "../lib/projectMethodology";
-import { addAgent, hasBmad, isComplete, normRoot, removeAgent, setupStatus, type SetupStatus } from "../lib/projectSetup";
-import { askAndSetUp } from "../lib/methodologyPrompt";
-import { SWITCH_DONE_EVENT } from "../lib/bmadSwitch";
+import { addAgent, isComplete, removeAgent, setUpOnRequest, setupStatus, type SetupStatus } from "../lib/projectSetup";
 
 interface Props {
   root: string | null;
@@ -34,16 +32,6 @@ export default function AgentsTab({ root, onNotice, onError }: Props) {
     }
   }, [root, catalog, onError]);
   useEffect(() => { void refresh(); }, [refresh]);
-  // A switch settles the BMAD question without going through "Set up now".
-  useEffect(() => {
-    if (!root) return;
-    const onDone = (e: Event) => {
-      const done = (e as CustomEvent<{ root?: string }>).detail;
-      if (done?.root && normRoot(done.root) === normRoot(root)) void refresh();
-    };
-    window.addEventListener(SWITCH_DONE_EVENT, onDone);
-    return () => window.removeEventListener(SWITCH_DONE_EVENT, onDone);
-  }, [root, refresh]);
 
   const suggested = useMemo(() => new Set((status?.stacks ?? []).flatMap((s) => STACK_AGENTS[s])), [status]);
 
@@ -55,7 +43,7 @@ export default function AgentsTab({ root, onNotice, onError }: Props) {
         await removeAgent(root, a.id);
         onNotice(`Removed ${a.title}. Setup won't add it back to this project.`);
       } else {
-        await addAgent(root, a, status?.methodology ?? "v6");
+        await addAgent(root, a);
         onNotice(`Added ${a.title} as .claude/agents/${a.id}.md. New Claude Code sessions can delegate to it.`);
       }
       await refresh();
@@ -70,8 +58,8 @@ export default function AgentsTab({ root, onNotice, onError }: Props) {
     if (!root) return;
     setBusy("setup");
     try {
-      // Asks which BMAD version when the project has none; null means the question was superseded.
-      if (await askAndSetUp(root)) await refresh();
+      await setUpOnRequest(root);
+      await refresh();
     } catch (e) {
       onError(errText(e));
     } finally {
@@ -93,9 +81,8 @@ export default function AgentsTab({ root, onNotice, onError }: Props) {
             {status?.stacks.map((s) => <span key={s} className="mcp-tag" data-stack>{STACK_LABELS[s]}</span>)}
           </div>
           <p>
-            BMAD, the ADE methodology (.ade/rules.md, loaded from CLAUDE.md), the eight core roles and the agents for this
+            The ADE methodology (.ade/rules.md, loaded from CLAUDE.md), the eight core roles and the agents for this
             project's stack. Only missing files are added.
-            {status && !hasBmad(status) && " BMAD isn't installed."}
             {status?.needsImport && " CLAUDE.md doesn't load the methodology yet."}
           </p>
         </div>

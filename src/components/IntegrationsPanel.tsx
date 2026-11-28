@@ -50,8 +50,7 @@ function rulesNotice(name: string, root: string, files: string[]): string {
 export default function IntegrationsPanel({ cwd, initialTab = "mcp", onClose }: Props) {
   const [tab, setTab] = useState<"agents" | "mcp" | "secrets" | "antislop">(initialTab);
   const [root, setRoot] = useState<string | null>(null);
-  // The Agents tab works on the BMAD project the pane is in, which can sit
-  // below the repository root the other tabs use.
+  // The Agents tab works on the project the pane is in.
   const [agentsRoot, setAgentsRoot] = useState<string | null>(null);
   const [installed, setInstalled] = useState<Servers>({});
   const [secrets, setSecrets] = useState<SecretMeta[]>([]);

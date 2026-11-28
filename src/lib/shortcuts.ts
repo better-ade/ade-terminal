@@ -45,7 +45,6 @@ export const SHORTCUTS = {
   sendEnter: { key: "e" },
   fileBrowser: { key: "b" },
   preview: { key: "b", shift: true },
-  board: { key: "y", shift: true },
   agentPicker: { key: "a", shift: true },
   fleet: { key: "." },
   orchestrator: { key: "o", shift: true },

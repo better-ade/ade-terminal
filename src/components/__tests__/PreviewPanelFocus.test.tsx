@@ -169,7 +169,7 @@ describe("keyboard and the side panel", () => {
       useKeybindings({
         toggleScratchpad: noop, closeScratchpad: noop, sendScratchpad: noop, copyScratchpad: noop,
         saveNoteScratchpad: noop, sendEnterToTerminal: noop, toggleCommandPalette: noop,
-        toggleAgentPicker: noop, togglePreview: noop, toggleBoard: noop, toggleFleet: noop,
+        toggleAgentPicker: noop, togglePreview: noop, toggleFleet: noop,
         toggleFileBrowser: noop, openOrchestrator: noop, toggleContracts: noop, toggleTokens: noop,
         toggleIntegrations: noop, toggleShortcuts: noop, toggleTabSwitcher: noop,
         requestCloseTab: noop, requestClosePane: noop, requestCloseView: noop, isScratchpadOpen: false,

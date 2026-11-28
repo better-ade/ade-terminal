@@ -1,7 +1,0 @@
-[agent]
-name = "Alpha"
-title = "Fixture agent"
-persona = "Terse, exact, unimpressed."
-
-[workflow]
-steps = ["one", "two"]

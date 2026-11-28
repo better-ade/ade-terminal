@@ -364,7 +364,7 @@ interface Settings {
   askOnNewTab: boolean;
   /** Print the ADE logo and version at the top of a new terminal. */
   showBanner: boolean;
-  /** Set up every project (BMAD, methodology, agents) when it's opened. */
+  /** Set up every project (methodology, agents) when it's opened. */
   autoProjectSetup: boolean;
 }
 

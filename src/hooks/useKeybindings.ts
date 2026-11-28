@@ -21,7 +21,6 @@ interface KeybindingActions {
   toggleCommandPalette: () => void;
   toggleAgentPicker: () => void;
   togglePreview: () => void;
-  toggleBoard: () => void;
   toggleFleet: () => void;
   toggleFileBrowser: () => void;
   openOrchestrator: () => void;
@@ -81,7 +80,6 @@ export function useKeybindings(actions: KeybindingActions) {
       if (is("renameTab")) return run(() => window.dispatchEvent(new CustomEvent("rename-active-tab")));
       if (is("agentPicker")) return run(actions.toggleAgentPicker);
       if (is("preview")) return run(actions.togglePreview);
-      if (is("board")) return run(actions.toggleBoard);
       if (is("fileBrowser")) return run(actions.toggleFileBrowser);
       if (is("fleet")) return run(actions.toggleFleet);
       if (is("orchestrator")) return run(actions.openOrchestrator);

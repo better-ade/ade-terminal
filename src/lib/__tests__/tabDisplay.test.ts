@@ -101,7 +101,7 @@ describe("a tab with a hidden view", () => {
     expect(tabFolderPaneId(withHidden(plain, "v1"))).toBe("p");
   });
 
-  // The palette's BMAD switch and "Set up project" and App's folder poll act on
+  // The palette's "Set up project" and App's folder poll act on
   // the tab's folder: the own view's pane, cwd and pty, never the view in sight.
   it("project actions and the folder poll use the own view's pane, cwd and pty with a hidden view shown", () => {
     const own: Tab = { id: "a", name: "Terminal", ...ownViewOnly({ type: "pane", pane: { id: "p", ptyId: 5, savedCwd: "/r/src" } }, "p") };

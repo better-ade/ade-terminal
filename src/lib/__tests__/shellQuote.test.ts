@@ -192,11 +192,6 @@ describe("the one quoter", () => {
   /** Places that may escape quotes for something other than a shell, and why. */
   const EXEMPT: Record<string, string> = {
     "src/lib/shellQuote.ts": "the quoter itself",
-    "src/lib/bmadRuntime/cli.ts": "Python repr() of refusal text, not a shell word",
-    "src/lib/bmadRuntime/memlog.ts": "Python repr() of log text, not a shell word",
-    "src/lib/bmadRuntime/render.ts": "Python repr() in rendered templates, not a shell word",
-    "src/lib/bmadRuntime/initSkill.ts": "a YAML single-quoted scalar, not a shell word",
-    "src/lib/bmadRuntime/compat.ts": "HTML attribute escaping, not a shell word",
     // Story 9 took this file from hermes-a-quoting (8b06ea4) without that
     // branch's migration of these four. hermes-a-quoting migrates them to
     // shellQuote and drops these lines (its side wins the merge).
