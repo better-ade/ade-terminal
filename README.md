@@ -22,10 +22,6 @@
   <a href="https://github.com/better-ade/ade-terminal/releases/latest"><strong>Download</strong></a>
 </p>
 
-<p align="center">
-  <img src="https://ade.ardata.tech/assets/img/hero.webp" alt="ADE: two terminal panes running tests and git log, a live Markdown preview of the implementation plan, and the prompt scratchpad along the bottom" width="100%">
-</p>
-
 ADE is a desktop IDE for macOS and Linux built around **Claude Code**, with Codex and local models running alongside it. Every project gets a methodology and a team of agents, and you see exactly what each one costs. It goes furthest on serious engineering work: nineteen roles that cover a whole company, a verification gate that decides when a story is actually done, and smart contracts from first test to reviewed deploy.
 
 ## AI Agents
@@ -36,10 +32,6 @@ ADE is a desktop IDE for macOS and Linux built around **Claude Code**, with Code
 - **A whole company, not just a delivery team**: nineteen roles end to end, from analyst and product manager through developer and QA to security engineer, SRE, release manager, support and solutions engineering. The picker lists every one unpaired, so the roles no profile covers are still a keystroke away.
 - **Project setup**: every project is set up for agents once, automatically. See [below](#project-setup).
 - **The agents are a repo you can share**: every role definition lives in [ade-method](https://github.com/better-ade/ade-method) (formerly ade-setup), versioned and released, and ADE ships a pinned copy: today the nineteen-role v1 set (ade-setup v1.0.4, in `vendor/ade-setup/`). Improve a role there and it reaches your projects when you choose to update them, not on ADE's release schedule.
-<p align="center">
-  <img src="https://ade.ardata.tech/assets/img/fleet.webp" alt="The fleet timeline: one lane per agent and sub-agent, with what is running, what finished, and the cost so far" width="100%">
-</p>
-
 - **Prompt scratchpad**: draft long prompts under every terminal with prompt tips and de-slop, send with one key, chain steps and reuse from history. Drafts survive crashes.
 - **Tokens & cost**: spend at API prices, cache savings and context meters, plus one-click token savers (compact paste, context guard, context diet).
 - **Anti-slop**: the ADE plugin for Claude Code (anti-slop skill, a slop check before Claude finishes, `/ade:deslop`, Web3/Go/Rust sub-agents and architect skills), plus a slop check on your uncommitted changes.
@@ -60,10 +52,6 @@ Only missing files are written, and the toast that lists them has Undo. Add or r
 ## Blockchain Engineering Tooling
 
 - **Contracts panel**: one key opens build, test, gas report, coverage, Slither and Aderyn analysis and a local chain for Foundry, Hardhat and Anchor projects.
-<p align="center">
-  <img src="https://ade.ardata.tech/assets/img/contracts-panel.webp" alt="The Contracts panel: build, test, gas report, coverage, Slither and Aderyn, a local chain, and a deploy command that is typed into the terminal rather than run" width="100%">
-</p>
-
 - **Workbench**: run Foundry tests one at a time with gas, fuzz runs and counterexamples, then deploy and call contracts on Anvil with decoded events and reverts.
 - **Reviewed deploys**: real-network deploy commands are typed into the terminal for you to review, never run automatically. ADE never handles, stores or syncs private keys.
 - **ABI viewer**: functions, events and errors with their selectors, and Anchor IDLs with their accounts.
